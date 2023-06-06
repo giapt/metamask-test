@@ -5,7 +5,7 @@ test.describe.configure({ mode: 'parallel' });
 
 test.beforeEach(async ({ page }) => {
   // baseUrl is set in playwright.config.ts
-  const NFT2_URL = process.env.NFT2_URL ?? 'https://nft2scan-stg.dareplay.io/'
+  const NFT2_URL = process.env.NFT2_URL ?? 'https://stg.nft2scan.com/'
   await page.goto(NFT2_URL);
 });
 

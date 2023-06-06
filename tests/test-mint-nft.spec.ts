@@ -3,77 +3,54 @@ import * as metamask from '@synthetixio/synpress/commands/metamask';
 import playwright from '@synthetixio/synpress/commands/playwright';
 
 test.describe.configure({ mode: 'parallel' });
+const NFT2_URL = process.env.NFT2_URL ?? 'https://stg.nft2scan.com/'
 
 test.beforeEach(async ({ page }) => {
-  // baseUrl is set in playwright.config.ts
-  const NFT2_URL = process.env.NFT2_URL ?? 'https://nft2scan-stg.dareplay.io/'
-  await page.goto(NFT2_URL);
+    // baseUrl is set in playwright.config.ts
+    await page.goto(NFT2_URL);
 });
 
-test('connect wallet using default metamask account', async ({ page }) => {
-    await metamask.addNetwork('bscTestnet')
-    await page.getByRole('button', { name: 'chain Connect wallet' }).click();
-    await page.click('text=Metamask');
-
-    page
-    .locator(
-        'xpath=//html/body/div[2]/div/div[2]/div/div[2]/div/div/div/div[3]/div/label[1]/span',
-    )
-    .click();
-    await page.getByRole('button', { name: 'Confirm' }).click();
-    await metamask.acceptAccess({ allAccounts: false, signInSignature: true });
-
-    await page.getByRole('button', { name: 'Mint NFT2.0' }).click();
-
-    await page
-    .locator(
-        'xpath=//html/body/div[2]/div/div[2]/div/div[2]/div/div/div/div[4]/div/div/div',
-    )
-    .click();
-
-    await page.getByRole('button', { name: 'SELECT' }).click();
-
-    await page
-    .getByPlaceholder("Enter name")
-    .fill("hell1");
-
-    await page
-    .getByPlaceholder("Enter description")
-    .fill("hell1");
+test('aut nft2scan', async ({ page }) => {
+    await test.step('Login Wallet', async () => {
+        await metamask.addNetwork('bscTestnet');
+        await page.getByRole('button', { name: 'chain Connect wallet' }).click();
+        await page.click('text=Metamask');
+        
+        await page.locator('div').filter({ hasText: /^I read and accept the Terms of Service and Privacy Policy$/ }).locator('span').click();
+        await page.getByRole('button', { name: 'Confirm' }).click();
+        await metamask.acceptAccess({ allAccounts: false, signInSignature: true });
+        
+        // await expect.soft(
+        //     page.locator('xpath=//*[@id="root"]/div/header/div[2]/button/span'),
+        // ).toHaveText('0xc9D...eF63222');
+    });
     
-    await page
-    .getByPlaceholder("Trait name")
-    .fill("strength");
+    await test.step('Deploy origin nft2 collection', async () => {
+        await page.getByRole('button', { name: 'Mint NFT2.0' }).click();
+        await page.getByRole('button', { name: 'Create a new collection' }).click();
 
-    await page
-    .getByPlaceholder("Value")
-    .fill("100");
+        const collectionName = `at${Math.floor(Date.now()/1000)}`
+        console.log("collection new", collectionName)
+        await page
+        .getByPlaceholder("Enter colletion name")
+        .fill(collectionName);
 
-    const fileChooserPromise = page.waitForEvent('filechooser');
+        await page
+        .getByPlaceholder("Enter colletion symbol")
+        .fill(collectionName);
+        
 
-    await page.locator('xpath=//*[@id="root"]/div/div/div/div[4]/div[2]/form/div[1]/div/div[1]/div[1]/div').click();
+        await page.locator('div').filter({ hasText: /^Enter select network$/ }).nth(2).click();
+        await page.getByText(/^(BNB chain testnet|BSC_TESTNET)$/).click();
 
-    const fileChooser = await fileChooserPromise;
-    await fileChooser.setFiles('avatar.avif');
-    
-    await page.waitForTimeout(2000);
+        await page.getByRole('button', { name: 'Deploy collection contract' }).click();
 
-    await page.getByRole('button', { name: 'Mint NFTs' }).click();
-
-    await page.getByRole('button', { name: 'Mint Nft2' }).click();
-
-    await page.getByRole('button', { name: 'Continue' }).click();
-
-    await page.waitForTimeout(2000);
-
-    await metamask.confirmDataSignatureRequest();
-    
-    // const notificationPage = await playwright.switchToMetamaskNotification();
-    // const confirm_button = notificationPage.getByText("Confirm");
-    // await confirm_button.click();
-    
-    expect(page.getByText('NFTs Minted Successfully!')).toBeTruthy()
-    
-    await page.pause()
-    
+        await page.getByRole('button', { name: 'Continue' }).click();
+        
+        const notificationPage = await playwright.switchToMetamaskNotification();
+        const confirm_button = notificationPage.getByText("Confirm");
+        await confirm_button.click();
+        
+        await page.waitForTimeout(3000);
+    });
 });
