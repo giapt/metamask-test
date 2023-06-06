@@ -7,6 +7,7 @@ on:
 jobs:
   playwright:
     name: 'Playwright Tests'
+    runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.33.0-jammy
     steps:
@@ -17,4 +18,4 @@ jobs:
       - name: Install dependencies
         run: npm i
       - name: Run your tests
-        run: xvfb-run npx playwright test
+        run: npx playwright test
